@@ -1,0 +1,51 @@
+# ── Python ────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+*.whl
+pip-wheel-metadata/
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Jupyter Notebook checkpoints (keep .ipynb files themselves!)
+.ipynb_checkpoints/
+
+# ── Node / React Frontend ─────────────────────────────────────────────────
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local
+
+# ── ML Model files (large binaries – export from notebooks instead) ───────
+# Comment out the next two lines if you WANT to commit the .pkl files
+# backend/models/*.pkl
+# backend/models/*.joblib
+
+# Keep the .gitkeep so the models/ folder is tracked
+!backend/models/.gitkeep
+
+# ── OS / Editor ───────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# ── Logs ──────────────────────────────────────────────────────────────────
+*.log
+build_err.log
+build_error.log

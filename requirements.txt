@@ -1,0 +1,24 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# AI Sales Intelligence Platform – Backend Requirements
+# ──────────────────────────────────────────────────────────────────────────────
+
+# Web framework & server
+fastapi==0.111.0
+uvicorn[standard]==0.29.0
+
+# ML / Data science
+scikit-learn==1.4.2
+joblib==1.4.0
+numpy==1.26.4
+pandas==2.2.2
+
+# NLP (optional – used if notebooks export TF-IDF pipelines)
+nltk==3.8.1
+
+# Original Flask stack (kept for compatibility with existing app.py / templates)
+Flask==3.0.3
+Werkzeug==3.0.3
+Jinja2==3.1.4
+itsdangerous==2.2.0
+click==8.1.7
+blinker==1.8.2

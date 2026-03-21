@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Control Panel</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="background-animation"></div>
+    <div class="glass-container">
+        <header>
+            <h1>AI Models Dashboard</h1>
+            <p>Select a model to initialize analysis</p>
+        </header>
+
+        <div class="card-grid">
+            <div class="card">
+                <div class="card-icon">🛍️</div>
+                <h2>BigMart Sales</h2>
+                <p>Retail sales prediction & optimization insights based on historical data.</p>
+                <button class="action-btn">Launch Model</button>
+            </div>
+            <div class="card">
+                <div class="card-icon">👥</div>
+                <h2>CRM Analytics</h2>
+                <p>Customer relationship insights, segmentation, and lead scoring engine.</p>
+                <button class="action-btn">Launch Model</button>
+            </div>
+            <div class="card">
+                <div class="card-icon">✉️</div>
+                <h2>Email Sentiment</h2>
+                <p>NLP-powered sentiment analysis for improved communication strategies.</p>
+                <button class="action-btn">Launch Model</button>
+            </div>
+            <div class="card">
+                <div class="card-icon">📁</div>
+                <h2>Email Organizer</h2>
+                <p>Automated inbox management and smart categorization system.</p>
+                <button class="action-btn">Launch Model</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
