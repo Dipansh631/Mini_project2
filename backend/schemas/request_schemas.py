@@ -4,7 +4,7 @@ Pydantic models for all API request and response payloads.
 """
 
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 
 # ─────────────────────────────────────────────
@@ -12,30 +12,24 @@ from typing import List, Optional
 # ─────────────────────────────────────────────
 
 class DealRequest(BaseModel):
-    """Input payload for the POST /predict-deal endpoint."""
-    client_name: str = Field(..., example="ABC Corp", description="Name of the client company")
-    deal_value: float = Field(..., gt=0, example=50000, description="Monetary value of the deal in USD")
-    stage: str = Field(
-        default="Lead",
-        example="Negotiation",
-        description="Current CRM pipeline stage: Lead | Qualified | Proposal | Negotiation | Closed",
-    )
-    interactions: int = Field(..., ge=0, example=5, description="Number of past interactions with the client")
-    email_text: Optional[str] = Field(
-        default="",
-        example="We are looking forward to finalising the agreement.",
-        description="Optional recent email text for inline sentiment scoring",
-    )
+    client_name: str = Field(..., example="ABC Corp")
+    deal_value: float = Field(..., gt=0, example=50000)
+    stage: str = Field(default="Lead", example="Negotiation")
+    interactions: int = Field(..., ge=0, example=5)
+    email_text: Optional[str] = Field(default="", example="We are excited to proceed.")
 
 
 class EmailRequest(BaseModel):
-    """Input payload for the POST /analyze-email endpoint."""
-    email_text: str = Field(
-        ...,
-        min_length=1,
-        example="We are interested but need a better price.",
-        description="Raw email body to analyse for sentiment and emotion",
-    )
+    email_text: str = Field(..., min_length=1)
+    client_name: Optional[str] = Field(default=None)
+
+
+class DealUpdateRequest(BaseModel):
+    """Fields that can be patched on an existing deal (all optional)."""
+    client_name: Optional[str]   = None
+    deal_value: Optional[float]  = None
+    stage: Optional[str]         = None
+    interactions: Optional[int]  = None
 
 
 # ─────────────────────────────────────────────
@@ -43,29 +37,43 @@ class EmailRequest(BaseModel):
 # ─────────────────────────────────────────────
 
 class DealResponse(BaseModel):
-    """Output payload returned by POST /predict-deal."""
     client_name: str
-    success_probability: float = Field(..., description="ML-predicted probability of deal success (0-1)")
-    risk_level: str = Field(..., description="Risk classification: Low | Medium | High")
-    predicted_revenue: float = Field(..., description="BigMart-model predicted expected revenue")
-    deal_score: int = Field(..., description="Composite deal score 0-100")
-    lead_category: str = Field(..., description="Lead category: Hot | Warm | Cold")
+    success_probability: float
+    risk_level: str
+    predicted_revenue: float
+    deal_score: int
+    lead_category: str
 
 
 class EmailResponse(BaseModel):
-    """Output payload returned by POST /analyze-email."""
-    sentiment: str = Field(..., description="Overall sentiment: Positive | Neutral | Negative")
-    emotion: str = Field(..., description="Dominant detected emotion")
-    sentiment_score: int = Field(..., description="Sentiment confidence score 0-100")
-    suggestion: str = Field(..., description="AI-generated actionable suggestion for the sales team")
-    detected_keywords: Optional[List[str]] = Field(default=[], description="Key trigger words detected in the email")
+    sentiment: str
+    emotion: str
+    sentiment_score: int
+    suggestion: str
+    detected_keywords: Optional[List[str]] = []
 
 
 class InsightsResponse(BaseModel):
-    """Output payload returned by GET /get-insights."""
-    insights: List[str] = Field(..., description="List of AI-generated strategic insight strings")
+    insights: List[str]
 
 
 class HealthResponse(BaseModel):
-    """Output payload returned by GET /health."""
     status: str = "API running"
+
+
+class UserRoleResponse(BaseModel):
+    email: str
+    role: str   # "admin" | "user"
+
+
+class DashboardStatsResponse(BaseModel):
+    total_deals: int
+    avg_success_probability: float
+    total_predicted_revenue: float
+    sentiment_distribution: Dict[str, Any] = {}
+
+
+class LeadsResponse(BaseModel):
+    hot: List[Dict[str, Any]] = []
+    warm: List[Dict[str, Any]] = []
+    cold: List[Dict[str, Any]] = []

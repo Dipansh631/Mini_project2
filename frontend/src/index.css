@@ -3,26 +3,36 @@
 @tailwind utilities;
 
 @layer base {
+  /* Prevent any horizontal overflow on mobile */
+  html, body {
+    @apply m-0 p-0 overflow-x-hidden;
+    -webkit-text-size-adjust: 100%; /* stop iOS from auto-inflating font sizes */
+  }
+
   body {
-    @apply bg-background text-gray-100 font-sans antialiased m-0 p-0 overflow-x-hidden;
+    @apply bg-background text-gray-100 font-sans antialiased;
+  }
+
+  /* Make all images and media fluid */
+  img, video, svg, canvas {
+    max-width: 100%;
+  }
+
+  /* Prevent text overflow on small screens */
+  * {
+    word-break: break-word;
   }
 }
 
+/* ── Glass card component ─────────────────────────────────────────────── */
 .glass-panel {
   @apply bg-surface/80 backdrop-blur-md border border-white/10 rounded-xl shadow-lg transition-all duration-300;
 }
 
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background-color: #334155;
-  border-radius: 10px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background-color: #475569;
+/* ── Custom scrollbar (desktop only) ─────────────────────────────────── */
+@media (min-width: 768px) {
+  ::-webkit-scrollbar       { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background-color: #334155; border-radius: 10px; }
+  ::-webkit-scrollbar-thumb:hover { background-color: #475569; }
 }

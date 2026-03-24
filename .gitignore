@@ -1,4 +1,12 @@
+# ── Environment / secrets ─────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+frontend/.env
+frontend/.env.local
+
 # ── Python ────────────────────────────────────────────────────────────────
+
 __pycache__/
 *.py[cod]
 *$py.class
