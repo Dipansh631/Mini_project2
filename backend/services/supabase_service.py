@@ -193,21 +193,26 @@ def get_dashboard_stats() -> dict:
 
 
 def get_leads_by_category() -> dict:
-    """Return deals grouped into Hot / Warm / Cold categories."""
+    """Return deals grouped into Hot / Warm / Cold categories based on probability."""
     db = _get_client()
     if db is None:
         return {"hot": [], "warm": [], "cold": []}
     try:
-        deals = db.table("deals").select("*").order("deal_score", desc=True).execute().data or []
+        # Order by success_probability desc instead of raw deal_score
+        deals = db.table("deals").select("*").order("success_probability", desc=True).execute().data or []
         result = {"hot": [], "warm": [], "cold": []}
+        
         for d in deals:
-            cat = (d.get("lead_category") or "").lower()
-            if "hot" in cat:
+            prob = d.get("success_probability", 0) or 0
+            
+            # Dynamically categorize based on raw probability instead of relying on string field
+            if prob >= 0.70:
                 result["hot"].append(d)
-            elif "warm" in cat:
+            elif prob >= 0.40:
                 result["warm"].append(d)
             else:
                 result["cold"].append(d)
+                
         return result
     except Exception as exc:
         logger.error("get_leads_by_category error: %s", exc)

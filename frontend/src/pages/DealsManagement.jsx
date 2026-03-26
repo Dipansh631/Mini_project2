@@ -32,8 +32,8 @@ const DealsManagement = () => {
   const sentColor = (s) =>
     s === 'Positive' ? 'text-green-400' : s === 'Neutral' ? 'text-yellow-400' : 'text-red-400';
 
-  const filteredDeals = deals.filter((d) =>
-    (d.deal_name || '').toLowerCase().includes(searchTerm.toLowerCase())
+ const filteredDeals = deals.filter((d) =>
+    (d.client_name || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleDelete = async (id) => {
@@ -97,9 +97,9 @@ const DealsManagement = () => {
                 <tr key={deal.id || idx} className="hover:bg-white/5 transition-colors group">
                   <td className="p-5 flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-zinc-900 border border-zinc-700 flex items-center justify-center font-bold text-primary shadow-[0_0_10px_rgba(34,211,238,0.1)] shrink-0 uppercase">
-                      {(deal.deal_name || 'D').charAt(0)}
+                      {(deal.client_name || 'D').charAt(0)}
                     </div>
-                    {deal.deal_name || 'Unnamed'}
+                    {deal.client_name || 'Unnamed'}
                   </td>
                   <td className="p-5 font-bold tracking-wide text-cyan-50">${(deal.deal_value || 0).toLocaleString()}</td>
                   <td className="p-5">
@@ -157,10 +157,10 @@ const DealsManagement = () => {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-zinc-900 border border-zinc-700 flex items-center justify-center font-bold text-primary shadow-[0_0_10px_rgba(34,211,238,0.2)] shrink-0 uppercase">
-                  {(deal.deal_name || 'D').charAt(0)}
+                  {(deal.client_name || 'D').charAt(0)}
                 </div>
                 <div>
-                  <p className="font-bold text-white text-base leading-tight">{deal.deal_name || 'Unnamed'}</p>
+                  <p className="font-bold text-white text-base leading-tight">{deal.client_name || 'Unnamed'}</p>
                   <p className="text-xs text-gray-400 mt-0.5">{deal.stage || 'Lead'}</p>
                 </div>
               </div>
