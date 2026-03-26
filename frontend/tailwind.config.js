@@ -8,14 +8,16 @@ export default {
   theme: {
     extend: {
       colors: {
-        background: '#0F172A',
-        surface: '#1E293B',
-        primary: '#3B82F6',
-        secondary: '#64748B',
-        accent: '#8B5CF6',
-        success: '#10B981',
-        warning: '#F59E0B',
-        danger: '#EF4444',
+        background: '#000000',
+        surface: '#09090b', // Zinc 950
+        primary: '#22d3ee', // Cyan 400 (Neon High-Tech)
+        secondary: '#0f172a', // Slate 900
+        accent: '#3b82f6', // Bright Blue
+        success: '#10b981',
+        warning: '#f59e0b',
+        danger: '#ef4444',
+        border: '#27272a', // Zinc 800
+        'cyan-glow': 'rgba(34, 211, 238, 0.3)',
       }
     },
   },

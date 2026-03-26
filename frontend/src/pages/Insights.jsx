@@ -13,19 +13,12 @@ const Insights = () => {
     setLoading(true);
     setError(null);
     try {
-      // Fetch global pipeline insights (no specific deal params)
       const response = await axios.get(`${API_BASE}/get-insights`);
       setInsights(response.data.insights || []);
     } catch (err) {
       console.error('Insight fetch error:', err);
-      setError('Could not reach backend. Make sure FastAPI is running on port 8000.');
-      // Fallback static insights
-      setInsights([
-        'Track all client touchpoints in the CRM to maximise model prediction accuracy.',
-        'High-sentiment deals close 2× faster – monitor email tone weekly.',
-        'Deals with 5+ interactions show a 40% higher close rate on average.',
-        'Negative tone detected in high-value deals → escalate to senior account manager.',
-      ]);
+      setError('Live insights currently unavailable. Check your backend connection.');
+      setInsights([]); // No more train data fallback
     } finally {
       setLoading(false);
     }
@@ -78,7 +71,7 @@ const Insights = () => {
             </div>
           ))}
         </div>
-      ) : (
+      ) : insights.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {insights.map((insight, index) => {
             const style = cardStyles[index % cardStyles.length];
@@ -92,6 +85,16 @@ const Insights = () => {
               </div>
             );
           })}
+        </div>
+      ) : (
+        <div className="glass-panel p-12 text-center border-dashed border-white/10">
+          <div className="p-4 bg-white/5 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <Lightbulb size={24} className="text-gray-600" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-300">No real-time insights yet</h3>
+          <p className="text-gray-500 text-sm mt-1 max-w-sm mx-auto">
+            Once your pipeline grows and deal activities are logged, our AI will automatically generate strategic advice here.
+          </p>
         </div>
       )}
     </div>

@@ -10,12 +10,12 @@
   }
 
   body {
-    @apply bg-background text-gray-100 font-sans antialiased;
-  }
-
-  /* Make all images and media fluid */
-  img, video, svg, canvas {
-    max-width: 100%;
+    @apply bg-background text-zinc-100 font-sans antialiased;
+    background-image: 
+      radial-gradient(circle at 50% 50%, rgba(34, 211, 238, 0.05) 0%, transparent 50%),
+      linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    background-size: 100% 100%, 40px 40px, 40px 40px;
   }
 
   /* Prevent text overflow on small screens */
@@ -24,9 +24,15 @@
   }
 }
 
-/* ── Glass card component ─────────────────────────────────────────────── */
+/* ── Techy Glass Card ─────────────────────────────────────────────────── */
 .glass-panel {
-  @apply bg-surface/80 backdrop-blur-md border border-white/10 rounded-xl shadow-lg transition-all duration-300;
+  @apply bg-black/40 backdrop-blur-xl border border-zinc-800 rounded-xl shadow-2xl transition-all duration-300;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
+}
+
+.glass-panel:hover {
+  @apply border-primary/40;
+  box-shadow: 0 0 20px rgba(34, 211, 238, 0.1);
 }
 
 /* ── Custom scrollbar (desktop only) ─────────────────────────────────── */

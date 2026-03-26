@@ -160,14 +160,26 @@ def get_dashboard_stats() -> dict:
         )
         total_rev = sum(d.get("predicted_revenue", 0) or 0 for d in deals)
         sentiment_dist: dict = {"Positive": 0, "Neutral": 0, "Negative": 0}
+        trends_map = {}
+        
         for d in deals:
             s = d.get("sentiment") or "Neutral"
             sentiment_dist[s] = sentiment_dist.get(s, 0) + 1
+            
+            # Trend mapping by date
+            date_str = d.get("created_at", "")[:10]  # Extract YYYY-MM-DD
+            if date_str:
+                trends_map[date_str] = trends_map.get(date_str, 0) + (d.get("predicted_revenue", 0) or 0)
+                
+        # Format trends for frontend chart
+        revenue_trends = [{"date": k, "revenue": round(v, 2)} for k, v in sorted(trends_map.items())]
+
         return {
             "total_deals": total,
             "avg_success_probability": round(avg_prob, 4),
             "total_predicted_revenue": round(total_rev, 2),
             "sentiment_distribution": sentiment_dist,
+            "revenue_trends": revenue_trends,
         }
     except Exception as exc:
         logger.error("get_dashboard_stats error: %s", exc)
@@ -176,6 +188,7 @@ def get_dashboard_stats() -> dict:
             "avg_success_probability": 0.0,
             "total_predicted_revenue": 0.0,
             "sentiment_distribution": {},
+            "revenue_trends": [],
         }
 
 

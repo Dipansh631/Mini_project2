@@ -18,7 +18,7 @@ const LoginPage = () => {
 
       {/* Ambient glows */}
       <div className="absolute top-[-15%] left-[-10%] w-[50%] h-[50%] bg-primary/20 rounded-full blur-[140px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-5%] w-[45%] h-[45%] bg-purple-500/15 rounded-full blur-[130px] pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-5%] w-[45%] h-[45%] bg-cyan-900/40 rounded-full blur-[130px] pointer-events-none" />
 
       <div className="w-full max-w-4xl grid md:grid-cols-2 gap-8 relative z-10">
 
@@ -26,19 +26,19 @@ const LoginPage = () => {
         <div className="flex flex-col justify-center">
           {/* Logo */}
           <div className="flex items-center gap-3 mb-8">
-            <div className="w-12 h-12 rounded-2xl bg-primary/20 flex items-center justify-center shadow-lg shadow-primary/20">
-              <Target size={26} className="text-blue-400" />
+            <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center shadow-[0_0_15px_rgba(34,211,238,0.2)]">
+              <Target size={26} className="text-primary drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]" />
             </div>
             <div>
-              <h1 className="text-2xl font-black bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent leading-tight">
+              <h1 className="text-2xl font-black bg-gradient-to-r from-primary to-cyan-200 bg-clip-text text-transparent leading-tight">
                 SalesLens AI
               </h1>
-              <p className="text-xs text-gray-500 font-medium tracking-wider uppercase">Sales Intelligence Platform</p>
+              <p className="text-xs text-gray-500 font-bold tracking-widest uppercase">Sales Intelligence Platform</p>
             </div>
           </div>
 
           <h2 className="text-4xl md:text-5xl font-extrabold text-white mb-4 leading-tight">
-            Close more deals with <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">AI intelligence</span>
+            Close more deals with <span className="bg-gradient-to-r from-primary to-cyan-400 bg-clip-text text-transparent">AI intelligence</span>
           </h2>
           <p className="text-gray-400 text-lg leading-relaxed mb-10">
             Predict deal outcomes, analyse client sentiment, and get AI-powered insights — all in one platform.
@@ -47,9 +47,9 @@ const LoginPage = () => {
           {/* Feature pills */}
           <div className="grid grid-cols-2 gap-3">
             {features.map(({ icon: Icon, label, sub }) => (
-              <div key={label} className="flex items-start gap-3 p-3 bg-surface/50 rounded-xl border border-white/5">
-                <div className="w-8 h-8 shrink-0 rounded-lg bg-primary/15 flex items-center justify-center">
-                  <Icon size={16} className="text-blue-400" />
+              <div key={label} className="flex items-start gap-3 p-3 bg-zinc-900/50 rounded-xl border border-white/5 hover:border-primary/30 transition-colors">
+                <div className="w-8 h-8 shrink-0 rounded-lg bg-black flex items-center justify-center border border-zinc-800">
+                  <Icon size={16} className="text-primary" />
                 </div>
                 <div>
                   <p className="text-white text-sm font-semibold leading-tight">{label}</p>
