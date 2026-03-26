@@ -41,35 +41,47 @@ def _get_client() -> Optional[Client]:
 def upsert_user(email: str) -> dict:
     """
     Insert user on first Google login; update nothing if already exists.
-    Assigns admin role if email matches ADMIN_EMAIL.
+    Everyone is assigned role 'user' (admin features disabled for now).
     """
     db = _get_client()
     if db is None:
-        return {"email": email, "role": "admin" if email == ADMIN_EMAIL else "user"}
-    role = "admin" if email == ADMIN_EMAIL else "user"
+        return {"email": email, "role": "user", "organization": None}
+    role = "user"   # Admin features disabled — everyone logs in as user
     try:
         result = (
             db.table("users")
             .upsert({"email": email, "role": role}, on_conflict="email")
             .execute()
         )
-        data = result.data[0] if result.data else {"email": email, "role": role}
+        data = result.data[0] if result.data else {"email": email, "role": role, "organization": None}
         return data
     except Exception as exc:
         logger.error("upsert_user error: %s", exc)
-        return {"email": email, "role": role}
+        return {"email": email, "role": role, "organization": None}
 
 
 def get_user_role(email: str) -> str:
-    """Return the stored role for a given user email."""
+    """Return the stored role for a given user email (always 'user' while admin is disabled)."""
     db = _get_client()
     if db is None:
-        return "admin" if email == ADMIN_EMAIL else "user"
+        return "user"
     try:
         result = db.table("users").select("role").eq("email", email).single().execute()
         return result.data.get("role", "user") if result.data else "user"
     except Exception:
-        return "admin" if email == ADMIN_EMAIL else "user"
+        return "user"
+
+
+def get_user_data(email: str) -> dict:
+    """Return role + organization for a given user email."""
+    db = _get_client()
+    if db is None:
+        return {"role": "admin" if email == ADMIN_EMAIL else "user", "organization": None}
+    try:
+        result = db.table("users").select("role, organization").eq("email", email).single().execute()
+        return result.data if result.data else {"role": "user", "organization": None}
+    except Exception:
+        return {"role": "admin" if email == ADMIN_EMAIL else "user", "organization": None}
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -204,3 +216,202 @@ def save_email(payload: dict) -> Optional[dict]:
     except Exception as exc:
         logger.error("save_email error: %s", exc)
         return None
+
+
+# ─────────────────────────────────────────────────────────────────
+# User History
+# ─────────────────────────────────────────────────────────────────
+
+def log_user_action(email: str, action: str, details: dict) -> None:
+    """
+    Append a row to user_history.
+    Called by the backend after every deal prediction or email analysis.
+    The service-role key bypasses RLS so this always succeeds.
+    """
+    db = _get_client()
+    if db is None:
+        return
+    try:
+        db.table("user_history").insert({
+            "user_email": email,
+            "action": action,
+            "details": details,
+        }).execute()
+        logger.info("user_history | logged action='%s' for %s", action, email)
+    except Exception as exc:
+        logger.error("log_user_action error: %s", exc)
+
+
+def get_user_history(email: str, is_admin: bool = False) -> list:
+    """
+    Fetch history rows.
+    - Regular users get only their own rows (filtered in DB via RLS, but
+      we also filter here as a double safeguard).
+    - Admins receive all rows when is_admin=True.
+    """
+    db = _get_client()
+    if db is None:
+        return []
+    try:
+        query = db.table("user_history").select("*").order("created_at", desc=True)
+        if not is_admin:
+            query = query.eq("user_email", email)
+        result = query.execute()
+        return result.data or []
+    except Exception as exc:
+        logger.error("get_user_history error: %s", exc)
+        return []
+
+
+# ─────────────────────────────────────────────────────────────────
+# Admin Credentials (Admin Gate)
+# ─────────────────────────────────────────────────────────────────
+
+def _generate_admin_creds(full_name: str, dob_str: str) -> tuple[str, str]:
+    """
+    Deterministic credential generator.
+    username = first_name (lowercase) + DOB year
+    password = DOB_year + age + username_char_count + @salesdeal
+    """
+    from datetime import date
+    dob = date.fromisoformat(dob_str)
+    today = date.today()
+    age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+    first_name = full_name.strip().split()[0].lower()
+    username = f"{first_name}{dob.year}"
+    password = f"{dob.year}{age}{len(username)}@salesdeal"
+    return username, password
+
+
+def apply_for_admin(email: str, full_name: str, dob: str, organization: str) -> dict:
+    """
+    Creates an admin_credentials record and promotes the user to admin.
+    Returns generated username & password.
+    Raises ValueError if the email already has a pending/approved application.
+    """
+    db = _get_client()
+    username, password = _generate_admin_creds(full_name, dob)
+
+    if db is None:
+        return {"username": username, "password": password}
+
+    try:
+        # Check for existing record
+        existing = db.table("admin_credentials").select("status").eq("email", email).execute()
+        if existing.data:
+            status = existing.data[0].get("status", "pending")
+            if status == "approved":
+                raise ValueError("Already an approved admin.")
+            if status == "pending":
+                raise ValueError("Application already submitted and pending approval.")
+            # rejected – allow re-apply by deleting old record
+            db.table("admin_credentials").delete().eq("email", email).execute()
+
+        # Insert new record
+        db.table("admin_credentials").insert({
+            "email":        email,
+            "full_name":    full_name,
+            "dob":          dob,
+            "username":     username,
+            "password":     password,
+            "organization": organization,
+            "status":       "approved",
+        }).execute()
+
+        # Promote user to admin + set org in users table
+        db.table("users").upsert(
+            {"email": email, "role": "admin", "organization": organization},
+            on_conflict="email"
+        ).execute()
+
+        logger.info("apply_for_admin | approved email=%s username=%s", email, username)
+        return {"username": username, "password": password}
+
+    except ValueError:
+        raise
+    except Exception as exc:
+        logger.error("apply_for_admin error: %s", exc)
+        raise RuntimeError(str(exc))
+
+
+def verify_admin_credentials(email: str, username: str, password: str) -> bool:
+    """Checks the admin_credentials table for a matching row."""
+    db = _get_client()
+    if db is None:
+        return False
+    try:
+        result = (
+            db.table("admin_credentials")
+            .select("id")
+            .eq("email",    email)
+            .eq("username", username)
+            .eq("password", password)
+            .eq("status",   "approved")
+            .execute()
+        )
+        return bool(result.data)
+    except Exception as exc:
+        logger.error("verify_admin_credentials error: %s", exc)
+        return False
+
+
+def get_admin_cred_by_email(email: str) -> Optional[dict]:
+    """Returns stored admin_credentials row for a given email, or None."""
+    db = _get_client()
+    if db is None:
+        return None
+    try:
+        result = (
+            db.table("admin_credentials")
+            .select("username, status, organization")
+            .eq("email", email)
+            .execute()
+        )
+        return result.data[0] if result.data else None
+    except Exception as exc:
+        logger.error("get_admin_cred_by_email error: %s", exc)
+        return None
+
+
+def set_user_org(email: str, organization: str) -> None:
+    """Set or update the organization for a regular user."""
+    db = _get_client()
+    if db is None:
+        return
+    try:
+        db.table("users").upsert(
+            {"email": email, "organization": organization},
+            on_conflict="email"
+        ).execute()
+        logger.info("set_user_org | %s → %s", email, organization)
+    except Exception as exc:
+        logger.error("set_user_org error: %s", exc)
+
+
+def get_org_users(admin_email: str) -> list:
+    """
+    Returns all users belonging to the same organization as the admin.
+    Looks up admin's org from admin_credentials, then fetches matching users.
+    """
+    db = _get_client()
+    if db is None:
+        return []
+    try:
+        # Get admin's organization
+        cred = db.table("admin_credentials").select("organization").eq("email", admin_email).execute()
+        if not cred.data:
+            return []
+        org = cred.data[0]["organization"]
+
+        # Fetch users in same org
+        result = (
+            db.table("users")
+            .select("email, role, organization, created_at")
+            .eq("organization", org)
+            .order("created_at", desc=True)
+            .execute()
+        )
+        return result.data or []
+    except Exception as exc:
+        logger.error("get_org_users error: %s", exc)
+        return []

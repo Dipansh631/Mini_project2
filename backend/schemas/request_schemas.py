@@ -62,8 +62,9 @@ class HealthResponse(BaseModel):
 
 
 class UserRoleResponse(BaseModel):
-    email: str
-    role: str   # "admin" | "user"
+    email:        str
+    role:         str              # "admin" | "user"
+    organization: Optional[str] = None
 
 
 class DashboardStatsResponse(BaseModel):
@@ -77,3 +78,31 @@ class LeadsResponse(BaseModel):
     hot: List[Dict[str, Any]] = []
     warm: List[Dict[str, Any]] = []
     cold: List[Dict[str, Any]] = []
+
+
+# ─────────────────────────────────────────────
+# Admin Gate Schemas
+# ─────────────────────────────────────────────
+
+class AdminApplyRequest(BaseModel):
+    email:        str = Field(..., description="Google-login email of the applicant")
+    full_name:    str = Field(..., min_length=2, example="Dipansh Maheshwari")
+    dob:          str = Field(..., description="Date of birth in YYYY-MM-DD format", example="2001-07-05")
+    organization: str = Field(..., min_length=2, example="SalesLens Corp")
+
+
+class UserOrgRequest(BaseModel):
+    email:        str = Field(...)
+    organization: str = Field(..., min_length=2)
+
+
+class AdminVerifyRequest(BaseModel):
+    email:    str = Field(..., description="Google-login email (must match stored record)")
+    username: str
+    password: str
+
+
+class AdminCredResponse(BaseModel):
+    username: str
+    password: str
+    message:  str = "Credentials generated successfully"

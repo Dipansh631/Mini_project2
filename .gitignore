@@ -57,3 +57,6 @@ Thumbs.db
 *.log
 build_err.log
 build_error.log
+
+# ── Supabase (keep local only – contains DB schema with sensitive structure) ──
+supabase_schema.sql

@@ -24,16 +24,21 @@ from backend.schemas.request_schemas import (
     HealthResponse, InsightsResponse,
     DashboardStatsResponse, LeadsResponse,
     UserRoleResponse, DealUpdateRequest,
+    AdminApplyRequest, AdminVerifyRequest, AdminCredResponse,
+    UserOrgRequest,
 )
 from backend.services.deal_service import predict_deal_outcome
 from backend.services.insight_service import generate_insights
 from backend.services.revenue_service import predict_revenue
 from backend.services.sentiment_service import analyse_sentiment
 from backend.services.supabase_service import (
-    upsert_user, get_user_role,
+    upsert_user, get_user_role, get_user_data,
     save_deal, get_all_deals, update_deal, delete_deal,
     get_dashboard_stats, get_leads_by_category,
     save_email,
+    log_user_action, get_user_history,
+    apply_for_admin, verify_admin_credentials, get_admin_cred_by_email,
+    set_user_org, get_org_users,
 )
 from backend.utils.preprocessing import compute_deal_score
 
@@ -123,20 +128,25 @@ async def health_check():
 async def handle_login(x_user_email: str = Header(..., alias="X-User-Email")):
     """
     Called by the frontend immediately after a successful Supabase Google login.
-    Upserts the user into the `users` table and returns their role.
+    Upserts the user into the `users` table and returns their role and organization.
     """
     user_data = upsert_user(x_user_email)
     return UserRoleResponse(
         email=x_user_email,
         role=user_data.get("role", "user"),
+        organization=user_data.get("organization"),
     )
 
 
 @app.get("/auth/user", response_model=UserRoleResponse, tags=["Auth"])
 async def get_auth_user(x_user_email: str = Header(..., alias="X-User-Email")):
-    """Return the stored role for the currently logged-in user."""
-    role = get_user_role(x_user_email)
-    return UserRoleResponse(email=x_user_email, role=role)
+    """Return the stored role + organization for the currently logged-in user."""
+    data = get_user_data(x_user_email)
+    return UserRoleResponse(
+        email=x_user_email,
+        role=data.get("role", "user"),
+        organization=data.get("organization"),
+    )
 
 
 # ─────────────────────────────────────────────
@@ -209,7 +219,10 @@ async def remove_deal(
 # Predictions
 # ─────────────────────────────────────────────
 @app.post("/predict-deal", response_model=DealResponse, tags=["Predictions"])
-async def predict_deal(payload: DealRequest):
+async def predict_deal(
+    payload: DealRequest,
+    x_user_email: Optional[str] = Header(None, alias="X-User-Email"),
+):
     """
     Runs ML pipeline → saves result to Supabase → returns prediction.
     """
@@ -241,7 +254,7 @@ async def predict_deal(payload: DealRequest):
         lead_category = _classify_lead(deal_score)
 
         # ── Persist to Supabase ───────────────────────────────────────────
-        save_deal({
+        deal_payload = {
             "client_name": payload.client_name,
             "deal_value": payload.deal_value,
             "stage": payload.stage,
@@ -253,7 +266,16 @@ async def predict_deal(payload: DealRequest):
             "deal_score": float(deal_score),
             "risk_level": risk_level,
             "lead_category": lead_category,
-        })
+        }
+        save_deal(deal_payload)
+
+        # ── Log to user history ───────────────────────────────────────────
+        if x_user_email:
+            log_user_action(
+                email=x_user_email,
+                action="Deal Prediction",
+                details=deal_payload,
+            )
 
         logger.info("predict-deal | client=%s prob=%.2f score=%d",
                     payload.client_name, success_probability, deal_score)
@@ -272,7 +294,10 @@ async def predict_deal(payload: DealRequest):
 
 
 @app.post("/analyze-email", response_model=EmailResponse, tags=["Predictions"])
-async def analyze_email(payload: EmailRequest):
+async def analyze_email(
+    payload: EmailRequest,
+    x_user_email: Optional[str] = Header(None, alias="X-User-Email"),
+):
     """Runs NLP sentiment analysis → saves to emails table → returns result."""
     try:
         sentiment, emotion, sentiment_score, suggestion, detected_keywords = analyse_sentiment(
@@ -281,13 +306,27 @@ async def analyze_email(payload: EmailRequest):
         )
 
         # ── Persist to Supabase ───────────────────────────────────────────
-        save_email({
+        email_payload = {
             "client_name": getattr(payload, "client_name", None),
             "email_text": payload.email_text,
             "sentiment": sentiment,
             "emotion": emotion,
             "sentiment_score": float(sentiment_score),
-        })
+        }
+        save_email(email_payload)
+
+        # ── Log to user history ───────────────────────────────────────────
+        if x_user_email:
+            log_user_action(
+                email=x_user_email,
+                action="Email Analysis",
+                details={
+                    "client_name": email_payload["client_name"],
+                    "sentiment": sentiment,
+                    "emotion": emotion,
+                    "sentiment_score": float(sentiment_score),
+                },
+            )
 
         logger.info("analyze-email | sentiment=%s emotion=%s score=%d",
                     sentiment, emotion, sentiment_score)
@@ -302,6 +341,101 @@ async def analyze_email(payload: EmailRequest):
     except Exception as exc:
         logger.exception("Unhandled error in /analyze-email: %s", exc)
         raise HTTPException(status_code=500, detail=f"Email analysis failed: {str(exc)}")
+
+
+# ─────────────────────────────────────────────
+# User History
+# ─────────────────────────────────────────────
+@app.get("/history", tags=["History"])
+async def user_history(
+    x_user_email: str = Header(..., alias="X-User-Email"),
+):
+    """
+    Returns history for the requesting user.
+    Admins get all rows; regular users get only their own.
+    """
+    role = get_user_role(x_user_email)
+    return get_user_history(email=x_user_email, is_admin=(role == "admin"))
+
+
+# ─────────────────────────────────────────────
+# Admin Gate
+# ─────────────────────────────────────────────
+@app.post("/admin/apply", response_model=AdminCredResponse, tags=["Admin Gate"])
+async def admin_apply(payload: AdminApplyRequest):
+    """
+    Apply for admin access. Generates username & password,
+    saves to admin_credentials, and promotes user role to admin.
+    """
+    try:
+        creds = apply_for_admin(
+            email=payload.email,
+            full_name=payload.full_name,
+            dob=payload.dob,
+            organization=payload.organization,
+        )
+        return AdminCredResponse(**creds)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+    except Exception as exc:
+        logger.exception("admin/apply error: %s", exc)
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@app.post("/admin/verify", tags=["Admin Gate"])
+async def admin_verify(payload: AdminVerifyRequest):
+    """
+    Verify admin credentials (username + password) for a Google-authenticated user.
+    Returns {"verified": true/false}.
+    """
+    ok = verify_admin_credentials(
+        email=payload.email,
+        username=payload.username,
+        password=payload.password,
+    )
+    if not ok:
+        raise HTTPException(status_code=401, detail="Invalid credentials.")
+    return {"verified": True}
+
+
+@app.get("/admin/status", tags=["Admin Gate"])
+async def admin_status(
+    x_user_email: str = Header(..., alias="X-User-Email"),
+):
+    """
+    Check if a user already has an admin_credentials record.
+    Returns {"has_credentials": bool, "username": str|null, "status": str|null, "organization": str|null}.
+    """
+    cred = get_admin_cred_by_email(x_user_email)
+    return {
+        "has_credentials": cred is not None,
+        "username":     cred["username"]     if cred else None,
+        "status":       cred["status"]       if cred else None,
+        "organization": cred["organization"] if cred else None,
+    }
+
+
+@app.post("/user/organization", tags=["Admin Gate"])
+async def save_user_org(payload: UserOrgRequest):
+    """Save/update the organization for a regular (non-admin) user."""
+    try:
+        set_user_org(email=payload.email, organization=payload.organization)
+        return {"detail": "Organization saved."}
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@app.get("/admin/org-users", tags=["Admin Gate"])
+async def org_users(
+    x_user_email: str = Header(..., alias="X-User-Email"),
+):
+    """
+    Returns all users in the admin's organization.
+    Only callable by an approved admin.
+    """
+    if get_user_role(x_user_email) != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required.")
+    return get_org_users(x_user_email)
 
 
 # ─────────────────────────────────────────────

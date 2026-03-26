@@ -1,5 +1,5 @@
 // src/contexts/AuthContext.jsx
-// Provides auth session + user role to the entire app via React Context.
+// Provides auth session + user role + organization to the entire app via React Context.
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase, API_BASE } from '../supabase';
 
@@ -8,15 +8,15 @@ const AuthContext = createContext(null);
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
-  const [session, setSession]   = useState(null);   // Supabase session
-  const [userRole, setUserRole] = useState(null);   // "admin" | "user" | null
+  const [session, setSession]   = useState(null);
+  const [userRole, setUserRole] = useState(null);
+  const [userOrg, setUserOrg]   = useState(null);   // null means not set yet
   const [loading, setLoading]   = useState(true);
 
-  // ── Helper: register / fetch role from backend ─────────────────────
+  // ── Sync role + org from backend ───────────────────────────
   const syncRole = async (email) => {
-    if (!email) { setUserRole(null); return; }
+    if (!email) { setUserRole(null); setUserOrg(null); return; }
     try {
-      // POST to /auth/login → upserts user row + returns role
       const res = await fetch(`${API_BASE}/auth/login`, {
         method: 'POST',
         headers: { 'X-User-Email': email },
@@ -24,25 +24,28 @@ export const AuthProvider = ({ children }) => {
       if (res.ok) {
         const data = await res.json();
         setUserRole(data.role);
+        setUserOrg(data.organization ?? null);
       } else {
-        // Fallback: compare to hardcoded admin email
         const ADMIN = 'dipanshumaheshwari73698@gmail.com';
         setUserRole(email === ADMIN ? 'admin' : 'user');
+        setUserOrg(null);
       }
     } catch {
       const ADMIN = 'dipanshumaheshwari73698@gmail.com';
       setUserRole(email === ADMIN ? 'admin' : 'user');
+      setUserOrg(null);
     }
   };
 
+  // Called by OrgSetupModal after the user saves their org
+  const saveOrg = (orgName) => setUserOrg(orgName);
+
   useEffect(() => {
-    // Get initial session
     supabase.auth.getSession().then(({ data: { session: s } }) => {
       setSession(s);
       syncRole(s?.user?.email || null).finally(() => setLoading(false));
     });
 
-    // Listen for auth changes (login / logout / token refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
       setSession(s);
       syncRole(s?.user?.email || null);
@@ -51,25 +54,29 @@ export const AuthProvider = ({ children }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // ── Google login ───────────────────────────────────────────────────
+  // ── Google login ────────────────────────────────────────────
   const signInWithGoogle = () =>
     supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: window.location.origin },
     });
 
-  // ── Logout ────────────────────────────────────────────────────────
+  // ── Logout ──────────────────────────────────────────────────
   const signOut = async () => {
     await supabase.auth.signOut();
     setSession(null);
     setUserRole(null);
+    setUserOrg(null);
   };
 
   const isAdmin = userRole === 'admin';
   const user    = session?.user ?? null;
 
   return (
-    <AuthContext.Provider value={{ session, user, userRole, isAdmin, loading, signInWithGoogle, signOut }}>
+    <AuthContext.Provider value={{
+      session, user, userRole, userOrg, isAdmin,
+      loading, signInWithGoogle, signOut, saveOrg,
+    }}>
       {children}
     </AuthContext.Provider>
   );

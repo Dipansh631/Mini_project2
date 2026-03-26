@@ -1,13 +1,13 @@
 import React, { useEffect } from 'react';
 import {
   LayoutDashboard, Target, Briefcase, Mail, Lightbulb,
-  Filter, BellRing, ChevronLeft, Menu, Shield, LogOut, User,
+  Filter, BellRing, ChevronLeft, Menu, LogOut, User, History,
 } from 'lucide-react';
 import { SIDEBAR_OPEN_W } from '../layout';
 import { useAuth } from '../contexts/AuthContext';
 
 const Sidebar = ({ currentPage, setCurrentPage, isOpen, setIsOpen }) => {
-  const { user, isAdmin, signOut } = useAuth();
+  const { user, signOut } = useAuth();
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 767px)');
@@ -24,8 +24,7 @@ const Sidebar = ({ currentPage, setCurrentPage, isOpen, setIsOpen }) => {
     { id: 'leads',        label: 'Lead Prioritization', icon: Filter          },
     { id: 'email',        label: 'Email Analyzer',      icon: Mail            },
     { id: 'insights',     label: 'AI Insights',         icon: Lightbulb       },
-    // Admin Panel – only shown when user is admin
-    ...(isAdmin ? [{ id: 'admin', label: 'Admin Panel', icon: Shield, adminOnly: true }] : []),
+    { id: 'history',      label: 'My History',          icon: History         },
   ];
 
   const isMobileNow = typeof window !== 'undefined' && window.innerWidth < 768;
@@ -129,8 +128,8 @@ const Sidebar = ({ currentPage, setCurrentPage, isOpen, setIsOpen }) => {
               <p className="text-white text-xs font-semibold truncate">
                 {user?.email || 'Guest'}
               </p>
-              <p className={`text-xs font-bold uppercase tracking-wider ${isAdmin ? 'text-red-400' : 'text-gray-500'}`}>
-                {isAdmin ? '⚡ Admin' : 'User'}
+              <p className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                User
               </p>
             </div>
             <button

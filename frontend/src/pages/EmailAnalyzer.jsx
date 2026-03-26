@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { Mail, MessageSquare, AlertCircle, Wand2 } from 'lucide-react';
 import axios from 'axios';
+import { useAuth } from '../contexts/AuthContext';
 
 const API_BASE = 'http://localhost:8000';
 
 const EmailAnalyzer = () => {
+  const { user } = useAuth();
   const [emailText, setEmailText] = useState('');
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -21,6 +23,8 @@ const EmailAnalyzer = () => {
       // Call real FastAPI /analyze-email endpoint
       const response = await axios.post(`${API_BASE}/analyze-email`, {
         email_text: emailText,
+      }, {
+        headers: { 'X-User-Email': user?.email || '' },
       });
 
       const d = response.data;

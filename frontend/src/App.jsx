@@ -7,15 +7,16 @@ import DealsManagement from './pages/DealsManagement';
 import EmailAnalyzer from './pages/EmailAnalyzer';
 import Insights from './pages/Insights';
 import Leads from './pages/Leads';
-import AdminPanel from './pages/AdminPanel';
+import HistoryPage from './pages/HistoryPage';
 import LoginPage from './pages/LoginPage';
+import OrgSetupModal from './components/OrgSetupModal';
 import { SIDEBAR_OPEN_W, SIDEBAR_CLOSE_W } from './layout';
 
 // ─────────────────────────────────────────────────────────────────────
 // Inner app – rendered after auth is resolved
 // ─────────────────────────────────────────────────────────────────────
 function AppInner() {
-  const { session, loading, isAdmin, user, signOut } = useAuth();
+  const { session, loading, user, signOut, userOrg } = useAuth();
   const [currentPage, setCurrentPage]   = useState('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(
     typeof window !== 'undefined' ? window.innerWidth >= 768 : true
@@ -24,8 +25,6 @@ function AppInner() {
   const isMobile = () => typeof window !== 'undefined' && window.innerWidth < 768;
 
   const navigateTo = (page) => {
-    // Guard admin page
-    if (page === 'admin' && !isAdmin) return;
     setCurrentPage(page);
     if (isMobile()) setIsSidebarOpen(false);
   };
@@ -56,7 +55,7 @@ function AppInner() {
       case 'email':        return <EmailAnalyzer />;
       case 'insights':     return <Insights />;
       case 'leads':        return <Leads />;
-      case 'admin':        return isAdmin ? <AdminPanel /> : <Dashboard setCurrentPage={navigateTo} />;
+      case 'history':      return <HistoryPage />;
       default:             return <Dashboard setCurrentPage={navigateTo} />;
     }
   };
@@ -118,6 +117,10 @@ function AppInner() {
           {renderPage()}
         </div>
       </main>
+
+      {/* Org-setup modal — shown once after login when org is not set */}
+      {session && userOrg === null && <OrgSetupModal />}
+
     </div>
   );
 }

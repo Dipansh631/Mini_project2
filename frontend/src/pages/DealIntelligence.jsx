@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { Target, TrendingUp, AlertCircle, Lightbulb } from 'lucide-react';
 import axios from 'axios';
+import { useAuth } from '../contexts/AuthContext';
 
 const API_BASE = 'http://localhost:8000';
 
 const DealIntelligence = () => {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({ clientName: '', dealValue: '', stage: 'Lead', interactions: '', emailText: '' });
   const [result, setResult] = useState(null);
   const [insights, setInsights] = useState([]);
@@ -25,6 +27,8 @@ const DealIntelligence = () => {
         stage: formData.stage,
         interactions: Number(formData.interactions),
         email_text: formData.emailText || '',
+      }, {
+        headers: { 'X-User-Email': user?.email || '' },
       });
 
       const d = dealResp.data;
