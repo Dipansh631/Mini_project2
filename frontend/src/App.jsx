@@ -16,7 +16,7 @@ import { SIDEBAR_OPEN_W, SIDEBAR_CLOSE_W } from './layout';
 // Inner app – rendered after auth is resolved
 // ─────────────────────────────────────────────────────────────────────
 function AppInner() {
-  const { session, loading, user, signOut, userOrg } = useAuth();
+  const { session, loading, user, signOut, orgModalOpen } = useAuth();
   const [currentPage, setCurrentPage]   = useState('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(
     typeof window !== 'undefined' ? window.innerWidth >= 768 : true
@@ -118,8 +118,8 @@ function AppInner() {
         </div>
       </main>
 
-      {/* Org-setup modal — shown once after login when org is not set */}
-      {session && userOrg === null && <OrgSetupModal />}
+      {/* Org setup/change modal */}
+      {session && orgModalOpen && <OrgSetupModal />}
 
     </div>
   );

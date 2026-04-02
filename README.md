@@ -95,6 +95,20 @@ New users can join their company's organization on their first login, ensuring a
 4. **Environment Variables**
    Set up your `.env` in the root and `frontend/` folders with your Supabase keys.
 
+5. **Database Setup (Task-Based SQL Files)**
+   Run the SQL files from `database/sql/` in this order inside Supabase SQL Editor:
+   ```bash
+   001_extensions.sql
+   002_users.sql
+   003_deals.sql
+   004_emails.sql
+   005_user_history.sql
+   006_admin_credentials.sql
+   007_org_columns_and_backfill.sql
+   008_user_scoped_data.sql
+   ```
+   Full details are in `database/README.md`.
+
 ---
 
 Developed with ❤️ for the next generation of sales leaders.

@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Filter, Star, Zap, Snowflake, Loader2 } from 'lucide-react';
 import axios from 'axios';
 import { API_BASE } from '../supabase';
+import { useAuth } from '../contexts/AuthContext';
 
 const Leads = () => {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('Hot');
   const [leadsData, setLeadsData] = useState({ hot: [], warm: [], cold: [] });
   const [loading, setLoading] = useState(true);
@@ -11,7 +13,9 @@ const Leads = () => {
   useEffect(() => {
     const fetchLeads = async () => {
       try {
-        const res = await axios.get(`${API_BASE}/leads`);
+        const res = await axios.get(`${API_BASE}/leads`, {
+          headers: { 'X-User-Email': user?.email || '' },
+        });
         setLeadsData(res.data);
       } catch (err) {
         console.error('Failed to fetch lead data:', err);
@@ -19,8 +23,13 @@ const Leads = () => {
         setLoading(false);
       }
     };
+    if (!user?.email) {
+      setLeadsData({ hot: [], warm: [], cold: [] });
+      setLoading(false);
+      return;
+    }
     fetchLeads();
-  }, []);
+  }, [user?.email]);
 
   const currentLeads = leadsData[activeTab.toLowerCase()] || [];
 

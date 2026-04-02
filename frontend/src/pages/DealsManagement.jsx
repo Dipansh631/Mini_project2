@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Pencil, Trash2, Plus, Search, Loader2, Database } from 'lucide-react';
 import axios from 'axios';
 import { API_BASE } from '../supabase';
+import { useAuth } from '../contexts/AuthContext';
 
 const DealsManagement = () => {
+  const { user } = useAuth();
   const [deals, setDeals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -11,7 +13,9 @@ const DealsManagement = () => {
   const fetchDeals = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API_BASE}/deals`);
+      const res = await axios.get(`${API_BASE}/deals`, {
+        headers: { 'X-User-Email': user?.email || '' },
+      });
       setDeals(res.data);
     } catch (err) {
       console.error('Failed to fetch deals:', err);
@@ -21,8 +25,13 @@ const DealsManagement = () => {
   };
 
   useEffect(() => {
+    if (!user?.email) {
+      setDeals([]);
+      setLoading(false);
+      return;
+    }
     fetchDeals();
-  }, []);
+  }, [user?.email]);
 
   const probColor = (p) =>
     (p * 100) >= 75 ? 'text-green-400 bg-green-400/10 border-green-400/20'

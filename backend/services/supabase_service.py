@@ -7,12 +7,13 @@ Uses the service-role key so it bypasses Row Level Security (RLS).
 import logging
 import os
 from functools import lru_cache
+from pathlib import Path
 from typing import Optional
 
 from dotenv import load_dotenv
 from supabase import Client, create_client
 
-load_dotenv()
+load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 
 logger = logging.getLogger(__name__)
 
@@ -102,13 +103,16 @@ def save_deal(payload: dict) -> Optional[dict]:
         return None
 
 
-def get_all_deals() -> list:
-    """Fetch all deals ordered by created_at desc."""
+def get_all_deals(email: Optional[str] = None, is_admin: bool = False) -> list:
+    """Fetch deals ordered by created_at desc (scoped by user unless admin)."""
     db = _get_client()
     if db is None:
         return []
     try:
-        result = db.table("deals").select("*").order("created_at", desc=True).execute()
+        query = db.table("deals").select("*")
+        if email and not is_admin:
+            query = query.eq("user_email", email)
+        result = query.order("created_at", desc=True).execute()
         return result.data or []
     except Exception as exc:
         logger.error("get_all_deals error: %s", exc)
@@ -141,8 +145,8 @@ def delete_deal(deal_id: str) -> bool:
         return False
 
 
-def get_dashboard_stats() -> dict:
-    """Aggregate stats from the deals table for the dashboard."""
+def get_dashboard_stats(email: Optional[str] = None, is_admin: bool = False) -> dict:
+    """Aggregate stats from deals, scoped by user unless admin."""
     db = _get_client()
     if db is None:
         return {
@@ -152,7 +156,10 @@ def get_dashboard_stats() -> dict:
             "sentiment_distribution": {"Positive": 0, "Neutral": 0, "Negative": 0},
         }
     try:
-        deals = db.table("deals").select("*").execute().data or []
+        query = db.table("deals").select("*")
+        if email and not is_admin:
+            query = query.eq("user_email", email)
+        deals = query.execute().data or []
         total = len(deals)
         avg_prob = (
             sum(d.get("success_probability", 0) or 0 for d in deals) / total
@@ -192,14 +199,17 @@ def get_dashboard_stats() -> dict:
         }
 
 
-def get_leads_by_category() -> dict:
-    """Return deals grouped into Hot / Warm / Cold categories based on probability."""
+def get_leads_by_category(email: Optional[str] = None, is_admin: bool = False) -> dict:
+    """Return deals grouped into Hot / Warm / Cold categories scoped by user unless admin."""
     db = _get_client()
     if db is None:
         return {"hot": [], "warm": [], "cold": []}
     try:
         # Order by success_probability desc instead of raw deal_score
-        deals = db.table("deals").select("*").order("success_probability", desc=True).execute().data or []
+        query = db.table("deals").select("*")
+        if email and not is_admin:
+            query = query.eq("user_email", email)
+        deals = query.order("success_probability", desc=True).execute().data or []
         result = {"hot": [], "warm": [], "cold": []}
         
         for d in deals:

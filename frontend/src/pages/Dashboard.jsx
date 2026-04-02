@@ -3,15 +3,19 @@ import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, R
 import { DollarSign, Briefcase, Activity, AlertTriangle, TrendingUp, Target, Loader2 } from 'lucide-react';
 import axios from 'axios';
 import { API_BASE } from '../supabase';
+import { useAuth } from '../contexts/AuthContext';
 
 const Dashboard = ({ setCurrentPage }) => {
+  const { user } = useAuth();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await axios.get(`${API_BASE}/dashboard-stats`);
+        const res = await axios.get(`${API_BASE}/dashboard-stats`, {
+          headers: { 'X-User-Email': user?.email || '' },
+        });
         setStats(res.data);
       } catch (err) {
         console.error('Failed to fetch dashboard stats:', err);
@@ -19,8 +23,13 @@ const Dashboard = ({ setCurrentPage }) => {
         setLoading(false);
       }
     };
+    if (!user?.email) {
+      setStats(null);
+      setLoading(false);
+      return;
+    }
     fetchStats();
-  }, []);
+  }, [user?.email]);
 
   // Format currency for display
   const fmtCurrency = (val) => {

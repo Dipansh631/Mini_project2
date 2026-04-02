@@ -1,13 +1,13 @@
 import React, { useEffect } from 'react';
 import {
   LayoutDashboard, Target, Briefcase, Mail, Lightbulb,
-  Filter, BellRing, ChevronLeft, Menu, LogOut, User, History,
+  Filter, BellRing, ChevronLeft, Menu, LogOut, User, History, Building2,
 } from 'lucide-react';
 import { SIDEBAR_OPEN_W } from '../layout';
 import { useAuth } from '../contexts/AuthContext';
 
 const Sidebar = ({ currentPage, setCurrentPage, isOpen, setIsOpen }) => {
-  const { user, signOut } = useAuth();
+  const { user, userOrg, signOut, openOrgModal } = useAuth();
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 767px)');
@@ -131,7 +131,17 @@ const Sidebar = ({ currentPage, setCurrentPage, isOpen, setIsOpen }) => {
               <p className="text-[10px] font-black uppercase tracking-wider text-primary/70">
                 User
               </p>
+              <p className="text-[10px] text-gray-500 truncate mt-1">
+                Org: {userOrg || 'Not set'}
+              </p>
             </div>
+            <button
+              onClick={openOrgModal}
+              title="Change organization"
+              className="p-1.5 text-gray-500 hover:text-blue-400 hover:bg-blue-400/10 rounded-lg transition-all"
+            >
+              <Building2 size={15} />
+            </button>
             <button
               onClick={signOut}
               title="Sign out"
@@ -142,12 +152,20 @@ const Sidebar = ({ currentPage, setCurrentPage, isOpen, setIsOpen }) => {
           </div>
         ) : (
           <div className="relative group flex justify-center">
-            <button
-              onClick={signOut}
-              className="w-10 h-10 flex items-center justify-center rounded-xl text-gray-500 hover:text-red-400 hover:bg-red-400/10 transition-all"
-            >
-              <LogOut size={18}/>
-            </button>
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={openOrgModal}
+                className="w-10 h-10 flex items-center justify-center rounded-xl text-gray-500 hover:text-blue-400 hover:bg-blue-400/10 transition-all"
+              >
+                <Building2 size={17}/>
+              </button>
+              <button
+                onClick={signOut}
+                className="w-10 h-10 flex items-center justify-center rounded-xl text-gray-500 hover:text-red-400 hover:bg-red-400/10 transition-all"
+              >
+                <LogOut size={18}/>
+              </button>
+            </div>
             <div className="
               hidden md:block absolute left-full top-1/2 -translate-y-1/2 ml-3 z-[100]
               px-3 py-1.5 rounded-lg bg-zinc-900 border border-white/10

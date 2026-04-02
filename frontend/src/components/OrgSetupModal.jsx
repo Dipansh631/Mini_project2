@@ -6,10 +6,11 @@ import { API_BASE } from '../supabase';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function OrgSetupModal() {
-  const { user, saveOrg } = useAuth();
-  const [orgName, setOrgName]   = useState('');
+  const { user, userOrg, saveOrg, closeOrgModal } = useAuth();
+  const [orgName, setOrgName]   = useState(userOrg || '');
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState('');
+  const isEditMode = Boolean(userOrg);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -64,8 +65,11 @@ export default function OrgSetupModal() {
           </div>
 
           <p className="text-gray-400 text-sm mb-6 leading-relaxed">
-            Please enter the name of your <span className="text-white font-semibold">organization</span> to
-            personalise your SalesLens experience. This helps admins manage team data.
+            {isEditMode ? (
+              <>Update your <span className="text-white font-semibold">organization</span>. Your dashboard data will remain tied to your account.</>
+            ) : (
+              <>Please enter the name of your <span className="text-white font-semibold">organization</span> to personalise your SalesLens experience. This helps admins manage team data.</>
+            )}
           </p>
 
           {/* Error */}
@@ -106,6 +110,16 @@ export default function OrgSetupModal() {
               }
               {loading ? 'Saving…' : 'Continue to Dashboard'}
             </button>
+
+            {isEditMode && (
+              <button
+                type="button"
+                onClick={closeOrgModal}
+                className="w-full py-3 rounded-xl bg-transparent border border-white/15 text-gray-300 font-semibold text-sm hover:bg-white/5 transition-all"
+              >
+                Cancel
+              </button>
+            )}
           </form>
 
           <p className="text-[11px] text-gray-600 text-center mt-4">

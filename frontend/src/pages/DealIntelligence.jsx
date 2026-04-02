@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { Target, TrendingUp, AlertCircle, Lightbulb } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
-
-const API_BASE = 'http://localhost:8000';
+import { API_BASE } from '../supabase';
 
 const DealIntelligence = () => {
   const { user } = useAuth();

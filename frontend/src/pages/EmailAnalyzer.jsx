@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { Mail, MessageSquare, AlertCircle, Wand2 } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
-
-const API_BASE = 'http://localhost:8000';
+import { API_BASE } from '../supabase';
 
 const EmailAnalyzer = () => {
   const { user } = useAuth();

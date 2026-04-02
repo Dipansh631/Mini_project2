@@ -16,7 +16,8 @@ from fastapi import FastAPI, HTTPException, Header, Query
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
 
-load_dotenv()
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+load_dotenv(PROJECT_ROOT / ".env")
 
 from backend.schemas.request_schemas import (
     DealRequest, DealResponse,
@@ -153,10 +154,13 @@ async def get_auth_user(x_user_email: str = Header(..., alias="X-User-Email")):
 # Dashboard
 # ─────────────────────────────────────────────
 @app.get("/dashboard-stats", response_model=DashboardStatsResponse, tags=["Dashboard"])
-async def dashboard_stats():
+async def dashboard_stats(
+    x_user_email: str = Header(..., alias="X-User-Email"),
+):
     """Aggregate KPIs from the deals table."""
     try:
-        stats = get_dashboard_stats()
+        role = get_user_role(x_user_email)
+        stats = get_dashboard_stats(email=x_user_email, is_admin=(role == "admin"))
         return DashboardStatsResponse(**stats)
     except Exception as exc:
         logger.exception("dashboard-stats error: %s", exc)
@@ -167,10 +171,13 @@ async def dashboard_stats():
 # Leads
 # ─────────────────────────────────────────────
 @app.get("/leads", response_model=LeadsResponse, tags=["Leads"])
-async def get_leads():
+async def get_leads(
+    x_user_email: str = Header(..., alias="X-User-Email"),
+):
     """Return deals grouped by lead category (Hot / Warm / Cold)."""
     try:
-        data = get_leads_by_category()
+        role = get_user_role(x_user_email)
+        data = get_leads_by_category(email=x_user_email, is_admin=(role == "admin"))
         return LeadsResponse(**data)
     except Exception as exc:
         logger.exception("leads error: %s", exc)
@@ -181,9 +188,12 @@ async def get_leads():
 # Deals CRUD
 # ─────────────────────────────────────────────
 @app.get("/deals", tags=["Deals"])
-async def list_deals():
+async def list_deals(
+    x_user_email: str = Header(..., alias="X-User-Email"),
+):
     """Return all deals (latest first)."""
-    return get_all_deals()
+    role = get_user_role(x_user_email)
+    return get_all_deals(email=x_user_email, is_admin=(role == "admin"))
 
 
 @app.patch("/deals/{deal_id}", tags=["Deals"])
@@ -266,6 +276,7 @@ async def predict_deal(
             "deal_score": float(deal_score),
             "risk_level": risk_level,
             "lead_category": lead_category,
+            "user_email": x_user_email,
         }
         save_deal(deal_payload)
 
@@ -312,6 +323,7 @@ async def analyze_email(
             "sentiment": sentiment,
             "emotion": emotion,
             "sentiment_score": float(sentiment_score),
+            "user_email": x_user_email,
         }
         save_email(email_payload)
 
