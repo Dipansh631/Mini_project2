@@ -478,3 +478,35 @@ async def get_insights(
     except Exception as exc:
         logger.exception("Unhandled error in /get-insights: %s", exc)
         raise HTTPException(status_code=500, detail=f"Insight generation failed: {str(exc)}")
+
+# ─────────────────────────────────────────────
+# Static Files & SPA Routing (Production Best Practice)
+# ─────────────────────────────────────────────
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+
+FRONTEND_DIST = PROJECT_ROOT / "frontend" / "dist"
+
+# Only mount if the build directory exists (prevents API crash during local dev if unbuilt)
+if FRONTEND_DIST.exists():
+    app.mount("/assets", StaticFiles(directory=FRONTEND_DIST / "assets"), name="assets")
+
+    @app.api_route("/{full_path:path}", methods=["GET", "HEAD"])
+    async def serve_spa(full_path: str):
+        """
+        Catch-all route to serve the React SPA and handle client-side routing.
+        Skips known API endpoints to prevent swallowing API 404s.
+        """
+        api_prefixes = ["docs", "openapi.json", "health", "auth", "dashboard-stats", "leads", "deals", "predict-deal", "analyze-email", "history", "admin", "user", "get-insights"]
+        
+        # If the request is for an API route, allow FastAPI to handle it (or return standard API 404)
+        if any(full_path.startswith(prefix) for prefix in api_prefixes):
+            raise HTTPException(status_code=404, detail="API route not found")
+            
+        # Serve the requested static file if it exists (e.g. vite.svg, favicon.ico)
+        file_path = FRONTEND_DIST / full_path
+        if file_path.exists() and file_path.is_file():
+            return FileResponse(file_path)
+            
+        # Fallback to index.html for React Router / Client-side routing
+        return FileResponse(FRONTEND_DIST / "index.html")
