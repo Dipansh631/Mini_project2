@@ -48,12 +48,12 @@ export const AuthProvider = ({ children }) => {
         const org = data.organization?.trim?.() || null;
         setUserOrg(org || cachedOrg || null);
         if (org) setCachedOrg(email, org);
-        setOrgModalOpen(!(org || cachedOrg));
+        setOrgModalOpen(false);
       } else {
         const ADMIN = 'dipanshumaheshwari73698@gmail.com';
         setUserRole(email === ADMIN ? 'admin' : 'user');
         setUserOrg(cachedOrg || null);
-        setOrgModalOpen(!cachedOrg);
+        setOrgModalOpen(false);
       }
     } catch {
       const ADMIN = 'dipanshumaheshwari73698@gmail.com';
