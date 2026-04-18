@@ -12,4 +12,4 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
 }
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-export const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000';
+export const API_BASE = import.meta.env.VITE_API_BASE || 'https://mini-project2-mhsz.onrender.com';
