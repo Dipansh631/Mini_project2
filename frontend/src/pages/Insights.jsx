@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Lightbulb, RefreshCw, AlertCircle } from 'lucide-react';
 import axios from 'axios';
 
-const API_BASE = 'http://localhost:8000';
+import { API_BASE } from '../supabase';
 
 const Insights = () => {
   const [insights, setInsights] = useState([]);
