@@ -9,14 +9,14 @@ import Insights from './pages/Insights';
 import Leads from './pages/Leads';
 import HistoryPage from './pages/HistoryPage';
 import LoginPage from './pages/LoginPage';
-import OrgSetupModal from './components/OrgSetupModal';
+
 import { SIDEBAR_OPEN_W, SIDEBAR_CLOSE_W } from './layout';
 
 // ─────────────────────────────────────────────────────────────────────
 // Inner app – rendered after auth is resolved
 // ─────────────────────────────────────────────────────────────────────
 function AppInner() {
-  const { session, loading, user, signOut, orgModalOpen } = useAuth();
+  const { session, loading, user, signOut } = useAuth();
   const [currentPage, setCurrentPage]   = useState('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(
     typeof window !== 'undefined' ? window.innerWidth >= 768 : true
@@ -118,8 +118,7 @@ function AppInner() {
         </div>
       </main>
 
-      {/* Org setup/change modal */}
-      {session && orgModalOpen && <OrgSetupModal />}
+
 
     </div>
   );
