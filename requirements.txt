@@ -5,6 +5,11 @@
 # Web framework & server
 fastapi==0.111.0
 uvicorn[standard]==0.29.0
+pydantic>=2.0,<3.0
+
+# Database
+python-dotenv>=1.0.0
+supabase>=2.0.0
 
 # ML / Data science
 scikit-learn==1.4.2
