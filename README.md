@@ -1,3 +1,7 @@
+
+Deployed Project Link **mini-project2-pi.vercel.app**
+
+
 # SalesLens AI 🎯 — Smart Sales Intelligence Platform
 
 ![SalesLens Hero Banner](docs/screenshots/hero.png)
