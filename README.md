@@ -1,6 +1,6 @@
 
 # Deployed Project Link 
-mini-project2-pi.vercel.app
+[mini-project2-yrxz.vercel.app](https://mini-project2-yrxz.vercel.app/)
 
 
 # SalesLens AI 🎯 — Smart Sales Intelligence Platform
